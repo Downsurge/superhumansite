@@ -1,65 +1,59 @@
-const { Client, Environment } = require("square");
+const square = require("square");
+const crypto = require("crypto");
+
+const Client = square.Client;
+const Environment = square.Environment;
 
 exports.handler = async (event, context) => {
   try {
-    const body = JSON.parse(event.body);
-    const plan = body.plan;
+    const { plan } = JSON.parse(event.body);
 
     if (!plan) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Missing plan type" }),
+        body: JSON.stringify({ error: "Missing plan value" }),
       };
     }
 
-    // Set amount based on plan
     const amount = plan === "annual" ? 199900 : 20000;
-    const lineItemName = plan === "annual"
+    const name = plan === "annual"
       ? "Superhuman Annual Plan"
       : "Superhuman Monthly Plan";
 
-    // Square client
     const client = new Client({
-      accessToken: process.env.SQUARE_ACCESS_TOKEN, // Sandbox or Prod token
-      environment: Environment.Sandbox, // Change to Production when ready
+      accessToken: process.env.SQUARE_ACCESS_TOKEN,
+      environment: Environment.Sandbox,
     });
 
-    const locationId = process.env.SQUARE_LOCATION_ID; // Add this in Netlify Env Vars
+    const locationId = process.env.SQUARE_LOCATION_ID;
 
-    // Create checkout link
-    const { result } = await client.checkoutApi.createCheckout(locationId, {
+    const { result } = await client.paymentLinksApi.createPaymentLink({
       idempotencyKey: crypto.randomUUID(),
-      order: {
-        order: {
-          locationId,
-          lineItems: [
-            {
-              name: lineItemName,
-              quantity: "1",
-              basePriceMoney: {
-                amount,
-                currency: "USD",
-              },
-            },
-          ],
+      description: name,
+      quickPay: {
+        name,
+        priceMoney: {
+          amount,
+          currency: "USD",
         },
+        locationId,
       },
-      redirectUrl: "https://superhumancalis.netlify.app/payment-success",
+      checkoutOptions: {
+        redirectUrl: "https://superhumanaz.netlify.app/payment-success",
+      },
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ url: result.checkout.checkoutPageUrl }),
+      body: JSON.stringify({ url: result.paymentLink.url }),
     };
-  } catch (error) {
-    console.error("Checkout error:", error);
+
+  } catch (err) {
+    console.error("Checkout error:", err);
 
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: error.message,
-        details: error,
-      }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
 };
