@@ -9,7 +9,7 @@ import {
   useCheckout,
 } from "@stripe/react-stripe-js/checkout";
 
-// Load Stripe with your publishable key
+// Load Stripe publishable key
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
 );
@@ -43,7 +43,7 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* BACKDROP */}
           <motion.div
             className="fixed inset-0 bg-black/80 z-40 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -52,17 +52,37 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
             onClick={onClose}
           />
 
-          {/* Modal Container */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          {/* OUTER CONTAINER — mobile scroll FIX */}
+          <div
+            className="
+              fixed inset-0 z-50 
+              flex items-center justify-center 
+              p-4 
+              pointer-events-none 
+              overflow-y-auto
+            "
+          >
+            {/* MODAL */}
             <motion.div
-              className="relative bg-[#0F0F0F] border-2 w-full max-w-2xl max-h-[90vh] overflow-hidden pointer-events-auto rounded-lg"
+              className="
+                relative 
+                bg-[#0F0F0F] 
+                border-2 
+                w-full 
+                max-w-2xl 
+                max-h-[90vh] 
+                overflow-y-auto 
+                overflow-x-hidden 
+                pointer-events-auto 
+                rounded-lg
+              "
               style={{ borderColor: currentPlan.color }}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Glowing frame */}
+              {/* INTERNAL GLOW FRAME */}
               <motion.div
                 className="absolute inset-0 border-2 pointer-events-none rounded-lg"
                 style={{ borderColor: currentPlan.color }}
@@ -73,13 +93,10 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
                     `0 0 20px ${currentPlan.color}, inset 0 0 20px ${currentPlan.color}`,
                   ],
                 }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
+                transition={{ duration: 2, repeat: Infinity }}
               />
 
-              {/* Corner accents */}
+              {/* CORNER ACCENTS */}
               {[
                 { pos: "top-0 left-0", border: "border-t-4 border-l-4" },
                 { pos: "top-0 right-0", border: "border-t-4 border-r-4" },
@@ -98,15 +115,20 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 z-10 p-2 border-2 hover:bg-[#1A1A1A] transition-colors rounded-md"
+                className="
+                  absolute top-4 right-4 z-10 
+                  p-2 border-2 
+                  hover:bg-[#1A1A1A] 
+                  transition-colors rounded-md
+                "
                 style={{ borderColor: currentPlan.color }}
               >
                 <X className="w-6 h-6" style={{ color: currentPlan.color }} />
               </button>
 
-              {/* Content */}
+              {/* CONTENT */}
               <div className="relative z-10 p-8">
-                {/* Plan Header */}
+                {/* PLAN HEADER */}
                 <div className="text-center mb-6">
                   <motion.h2
                     className="text-3xl mb-2 tracking-wider"
@@ -119,16 +141,22 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
                     {currentPlan.name}
                   </motion.h2>
 
-                  <p className="text-4xl font-bold" style={{ color: currentPlan.color }}>
+                  <p
+                    className="text-4xl font-bold"
+                    style={{ color: currentPlan.color }}
+                  >
                     {currentPlan.price}
                   </p>
 
                   {plan === "annual" && currentPlan.savings && (
-                    <p className="text-sm text-gray-400 mt-1">{currentPlan.savings}</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {currentPlan.savings}
+                    </p>
                   )}
                 </div>
 
-                <StripeEmbeddedCheckout plan={plan} />
+                {/* STRIPE CHECKOUT */}
+                <StripeEmbeddedCheckout plan={plan} color={currentPlan.color} />
 
                 <p className="text-center text-sm text-gray-500 mt-4">
                   Secure payment powered by Stripe
@@ -143,16 +171,22 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                        EMBEDDED STRIPE CHECKOUT FORM                        */
+/*                STRIPE EMBEDDED CHECKOUT WITH EMAIL + MOBILE FIX            */
 /* -------------------------------------------------------------------------- */
 
-function StripeEmbeddedCheckout({ plan }: { plan: "monthly" | "annual" }) {
+function StripeEmbeddedCheckout({
+  plan,
+  color,
+}: {
+  plan: "monthly" | "annual";
+  color: string;
+}) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch Checkout Session client secret
+  // Fetch checkout session client secret
   useEffect(() => {
     (async () => {
       try {
@@ -164,7 +198,7 @@ function StripeEmbeddedCheckout({ plan }: { plan: "monthly" | "annual" }) {
         const data = await res.json();
 
         if (!data.checkoutSessionClientSecret) {
-          throw new Error(data.error || "Failed to initiate payment");
+          throw new Error(data.error || "Failed to create checkout session");
         }
 
         setClientSecret(data.checkoutSessionClientSecret);
@@ -188,17 +222,33 @@ function StripeEmbeddedCheckout({ plan }: { plan: "monthly" | "annual" }) {
       options={{ clientSecret }}
     >
       <div className="space-y-4">
-        {/* Email input (Required by Stripe Embedded Checkout) */}
+        {/* NEON EMAIL INPUT */}
         <input
           type="email"
-          placeholder="Email address"
+          placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 rounded-md bg-black/40 border border-white/20 text-white"
+          className="
+            w-full 
+            p-4 
+            rounded-md
+            bg-[#0b0b0b]
+            text-white
+            border-2
+            focus:outline-none
+            transition-all
+            placeholder-gray-500
+            text-base
+            font-medium
+          "
+          style={{
+            borderColor: color,
+            boxShadow: `0 0 12px ${color}44`,
+          }}
           required
         />
 
-        {/* Stripe Card Form */}
+        {/* Stripe Card Element */}
         <div className="bg-black/40 rounded-lg p-4 border border-white/10">
           <PaymentElement />
         </div>
@@ -210,7 +260,7 @@ function StripeEmbeddedCheckout({ plan }: { plan: "monthly" | "annual" }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                              PAY BUTTON LOGIC                               */
+/*                          PAY BUTTON + REDIRECT LOGIC                       */
 /* -------------------------------------------------------------------------- */
 
 function PayButton({ email }: { email: string }) {
@@ -236,12 +286,23 @@ function PayButton({ email }: { email: string }) {
     setLoading(true);
     setLocalError("");
 
-    const result = await checkoutState.checkout.confirm({
-      email, // REQUIRED — fix for your Stripe error
-    });
+    const result = await checkoutState.checkout.confirm({ email });
 
     if (result.type === "error") {
       setLocalError(result.error.message);
+      setLoading(false);
+      return;
+    }
+
+    // SUCCESS — REDIRECT
+    if (result.type === "completed") {
+      window.location.href = `/payment-success?session_id=${result.checkoutSessionId}`;
+      return;
+    }
+
+    if ((result as any).sessionId) {
+      window.location.href = `/payment-success?session_id=${result.sessionId}`;
+      return;
     }
 
     setLoading(false);
@@ -252,14 +313,22 @@ function PayButton({ email }: { email: string }) {
       <button
         onClick={handleClick}
         disabled={loading || !email}
-        className="px-6 py-3 rounded-md font-semibold tracking-wide border border-white/20
-                   hover:bg-white/10 transition disabled:opacity-50"
+        className="
+          px-6 py-3 
+          rounded-md 
+          font-semibold 
+          tracking-wide 
+          border border-white/20
+          hover:bg-white/10 
+          transition 
+          disabled:opacity-50
+        "
       >
         {loading ? "Processing…" : "Complete Payment"}
       </button>
 
       {localError && (
-        <p className="text-sm text-red-400 text-center max-w-md">
+        <p className="text-sm text-red-center text-red-400 max-w-md">
           {localError}
         </p>
       )}
