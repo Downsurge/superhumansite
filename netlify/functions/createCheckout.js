@@ -50,7 +50,6 @@ exports.handler = async (event, context) => {
 
   } catch (err) {
     console.error("Checkout error:", err);
-
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
